@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>Inbox</ion-title>
+        <ion-title>Crypto App</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -17,8 +17,12 @@
         </ion-toolbar>
       </ion-header>
 
-      <ion-list>
-        <MessageListItem v-for="message in messages" :key="message.id" :message="message" />
+      <div v-if="isLoading" class="spinner-container">
+        <ion-spinner name="dots"></ion-spinner>
+        <h2>Loading</h2>
+      </div>
+      <ion-list v-else>
+        <CriptyListItem v-for="item in data" :key="item.id" :item="item" />
       </ion-list>
     </ion-content>
   </ion-page>
@@ -34,16 +38,47 @@ import {
   IonRefresherContent,
   IonTitle,
   IonToolbar,
+  IonSpinner,
 } from '@ionic/vue';
-import MessageListItem from '@/components/MessageListItem.vue';
-import { getMessages, Message } from '@/data/messages';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import { Cripto } from '@/data/crypto';
+import CriptyListItem from '@/components/CriptyListItem.vue';
 
-const messages = ref<Message[]>(getMessages());
+const data = ref<Cripto[]>([]);
+const isLoading = ref<boolean>(true);
+
+const getData = async () => {
+  try {
+    const url = 'https://api.coinlore.net/api/tickers/';
+    const response = await fetch(url);
+    const json = await response.json();
+    data.value = json.data;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
 
 const refresh = (ev: CustomEvent) => {
+  isLoading.value = true;
   setTimeout(() => {
     ev.detail.complete();
+    getData();
   }, 3000);
 };
+
+onMounted(() => {
+  getData();
+});
 </script>
+
+<style scoped>
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+</style>
